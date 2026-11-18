@@ -781,10 +781,14 @@ endblock()
 
 
 file(GLOB ADDON_FILES CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/src/**/**/addon.cpp)
+set(RENODX_ADDON_FILTER "" CACHE STRING "Optional list of addon targets to configure")
 set(SKIPPED_ADDON_TARGETS "")
 foreach(FILE ${ADDON_FILES})
   cmake_path(GET FILE PARENT_PATH ADDON_PATH)
   cmake_path(GET ADDON_PATH FILENAME ADDON) # treat as filename
+  if(RENODX_ADDON_FILTER AND NOT ADDON IN_LIST RENODX_ADDON_FILTER)
+    continue()
+  endif()
 
   set(ADDON_METADATA_PATH "${ADDON_PATH}/metadata.json")
   if(EXISTS "${ADDON_METADATA_PATH}")
