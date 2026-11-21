@@ -26,6 +26,9 @@ function build({ output = path.join(workspace, 'local-components/endfield-hdr'),
   const vs = run(vswhere, ['-latest', '-products', '*', '-requires', 'Microsoft.VisualStudio.Component.VC.Tools.x86.x64', '-property', 'installationPath']);
   const environment = run('cmd.exe', ['/d', '/s', '/c', `""${path.join(vs, 'VC/Auxiliary/Build/vcvars64.bat')}" >nul && set"`], { windowsVerbatimArguments: true });
   const env = { ...process.env };
+  // Only the tool setup talks to the GitHub API; the compilers and everything they run do without the job's token.
+  const token = env.GITHUB_TOKEN;
+  delete env.GITHUB_TOKEN;
   for (const line of environment.split(/\r?\n/)) {
     const equal = line.indexOf('=');
     if (equal < 1) continue;
@@ -36,14 +39,16 @@ function build({ output = path.join(workspace, 'local-components/endfield-hdr'),
   // The upstream setup script unpacks with an overload only PowerShell 7 has; Windows PowerShell stands in where that is all there is.
   const setupShell = spawnSync('where.exe', ['pwsh.exe'], { windowsHide: true }).status === 0 ? 'pwsh.exe' : 'powershell.exe';
   const shaderTools = path.join(cache, 'shader-tools');
+  // Through qaqr/setup-tools.ps1, which lets the script's GitHub API requests carry the CI job's token.
+  const setupTool = name => run(setupShell, ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', path.join(__dirname, 'setup-tools.ps1'), '-Script', path.join(root, 'scripts/setup-dev-env.ps1'), '-Tool', name, '-Bin', shaderTools], { env: token ? { ...env, GITHUB_TOKEN: token } : env, stdio: 'inherit' });
   fs.mkdirSync(shaderTools, { recursive: true });
   const pythonPackages = path.join(cache, 'python-packages');
   const pathKey = Object.keys(env).find(name => name.toLowerCase() === 'path') || 'Path';
   env[pathKey] = [path.dirname(python), path.dirname(cmake), path.dirname(ninja), shaderTools, path.join(cache, 'slang/bin'), env[pathKey]].join(';');
   env.PYTHONPATH = [pythonPackages, env.PYTHONPATH].filter(Boolean).join(';');
   if (!fs.existsSync(path.join(pythonPackages, 'jinja2'))) run(python, ['-m', 'pip', 'install', '--disable-pip-version-check', '--target', pythonPackages, 'Jinja2==3.1.6'], { env, stdio: 'inherit' });
-  if (!fs.existsSync(path.join(shaderTools, 'dxc.exe'))) run(setupShell, ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', `& '${path.join(root, 'scripts/setup-dev-env.ps1').replaceAll("'", "''")}' -Install -Tools dxc -Bin '${shaderTools.replaceAll("'", "''")}'`], { env, stdio: 'inherit' });
-  if (![process.env.QAQR_SLANG, path.join(cache, 'slang/bin/slangc.exe'), path.join(shaderTools, 'slangc.exe')].some(file => file && fs.existsSync(file))) run(setupShell, ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', `& '${path.join(root, 'scripts/setup-dev-env.ps1').replaceAll("'", "''")}' -Install -Tools slang -Bin '${shaderTools.replaceAll("'", "''")}'`], { env, stdio: 'inherit' });
+  if (!fs.existsSync(path.join(shaderTools, 'dxc.exe'))) setupTool('dxc');
+  if (![process.env.QAQR_SLANG, path.join(cache, 'slang/bin/slangc.exe'), path.join(shaderTools, 'slangc.exe')].some(file => file && fs.existsSync(file))) setupTool('slang');
   const slang = tool('slangc.exe', [process.env.QAQR_SLANG, path.join(cache, 'slang/bin/slangc.exe'), path.join(shaderTools, 'slangc.exe')]);
   const dxc = path.join(shaderTools, 'dxc.exe');
   const kitRoot = path.join(process.env['ProgramFiles(x86)'], 'Windows Kits/10/bin');
