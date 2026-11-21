@@ -33,6 +33,8 @@ function build({ output = path.join(workspace, 'local-components/endfield-hdr'),
     for (const key of Object.keys(env)) if (key.toLowerCase() === name.toLowerCase()) delete env[key];
     env[name] = line.slice(equal + 1);
   }
+  // The upstream setup script unpacks with an overload only PowerShell 7 has; Windows PowerShell stands in where that is all there is.
+  const setupShell = spawnSync('where.exe', ['pwsh.exe'], { windowsHide: true }).status === 0 ? 'pwsh.exe' : 'powershell.exe';
   const shaderTools = path.join(cache, 'shader-tools');
   fs.mkdirSync(shaderTools, { recursive: true });
   const pythonPackages = path.join(cache, 'python-packages');
@@ -40,8 +42,8 @@ function build({ output = path.join(workspace, 'local-components/endfield-hdr'),
   env[pathKey] = [path.dirname(python), path.dirname(cmake), path.dirname(ninja), shaderTools, path.join(cache, 'slang/bin'), env[pathKey]].join(';');
   env.PYTHONPATH = [pythonPackages, env.PYTHONPATH].filter(Boolean).join(';');
   if (!fs.existsSync(path.join(pythonPackages, 'jinja2'))) run(python, ['-m', 'pip', 'install', '--disable-pip-version-check', '--target', pythonPackages, 'Jinja2==3.1.6'], { env, stdio: 'inherit' });
-  if (!fs.existsSync(path.join(shaderTools, 'dxc.exe'))) run('powershell.exe', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', `& '${path.join(root, 'scripts/setup-dev-env.ps1').replaceAll("'", "''")}' -Install -Tools dxc -Bin '${shaderTools.replaceAll("'", "''")}'`], { env, stdio: 'inherit' });
-  if (![process.env.QAQR_SLANG, path.join(cache, 'slang/bin/slangc.exe'), path.join(shaderTools, 'slangc.exe')].some(file => file && fs.existsSync(file))) run('powershell.exe', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', `& '${path.join(root, 'scripts/setup-dev-env.ps1').replaceAll("'", "''")}' -Install -Tools slang -Bin '${shaderTools.replaceAll("'", "''")}'`], { env, stdio: 'inherit' });
+  if (!fs.existsSync(path.join(shaderTools, 'dxc.exe'))) run(setupShell, ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', `& '${path.join(root, 'scripts/setup-dev-env.ps1').replaceAll("'", "''")}' -Install -Tools dxc -Bin '${shaderTools.replaceAll("'", "''")}'`], { env, stdio: 'inherit' });
+  if (![process.env.QAQR_SLANG, path.join(cache, 'slang/bin/slangc.exe'), path.join(shaderTools, 'slangc.exe')].some(file => file && fs.existsSync(file))) run(setupShell, ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', `& '${path.join(root, 'scripts/setup-dev-env.ps1').replaceAll("'", "''")}' -Install -Tools slang -Bin '${shaderTools.replaceAll("'", "''")}'`], { env, stdio: 'inherit' });
   const slang = tool('slangc.exe', [process.env.QAQR_SLANG, path.join(cache, 'slang/bin/slangc.exe'), path.join(shaderTools, 'slangc.exe')]);
   const dxc = path.join(shaderTools, 'dxc.exe');
   const kitRoot = path.join(process.env['ProgramFiles(x86)'], 'Windows Kits/10/bin');
