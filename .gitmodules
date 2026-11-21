@@ -1,27 +1,27 @@
 [submodule "external/reshade"]
   path = external/reshade
   url = https://github.com/QAQ-Revival/reshade.git
-	branch = renodx-sdk
+  branch = renodx-sdk
+
 [submodule "external/Streamline"]
   path = external/Streamline
-  url = https://github.com/QAQ-Revival/Streamline.git
-	branch = patch-1
+  url = https://github.com/clshortfuse/Streamline.git
+  branch = patch-1
+
 [submodule "external/gtl"]
   path = external/gtl
-  url = https://github.com/QAQ-Revival/gtl.git
-	branch = main
+  url = https://github.com/greg7mdp/gtl.git
+
 [submodule "external/DLSS"]
   path = external/DLSS
-  url = https://github.com/QAQ-Revival/DLSS.git
-	branch = main
+  url = https://github.com/NVIDIA/DLSS.git
+
 [submodule "external/Detours"]
   path = external/Detours
-  url = https://github.com/QAQ-Revival/Detours.git
-	branch = main
+  url = https://github.com/microsoft/Detours.git
 [submodule "external/frozen"]
 	path = external/frozen
-	url = https://github.com/QAQ-Revival/frozen.git
-	branch = master
+	url = https://github.com/serge-sans-paille/frozen.git
 [submodule "external/DirectXTex"]
 	path = external/DirectXTex
 	url = https://github.com/microsoft/DirectXTex.git
@@ -40,9 +40,7 @@
 	update = none
 [submodule "external/json"]
 	path = external/json
-	url = https://github.com/QAQ-Revival/json.git
-	branch = develop
+	url = https://github.com/nlohmann/json.git
 [submodule "external/minhook"]
 	path = external/minhook
-	url = https://github.com/QAQ-Revival/minhook.git
-	branch = master
+	url = https://github.com/TsudaKageyu/minhook.git
